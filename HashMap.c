@@ -29,7 +29,20 @@
 ///
 /// @TODO: Implement this function
 HashMap *newHashMap(int num_buckets, HashFunc func) {
-  return NULL;
+  HashMap *new_map = malloc(1 * sizeof(HashMap));
+
+  if (new_map == NULL) {
+    printf("Error: could not allocate memory for HashMap\n");
+  }
+  else
+  {
+    new_map->func = func;
+    new_map->num_buckets = num_buckets;
+    new_map->buckets = malloc(num_buckets * sizeof(BucketNode*));
+    new_map->num_elems = 0;
+  }
+
+  return new_map;
 }
 
 /// @brief Construct a new HashMap of the given size, and re-hash all
@@ -117,5 +130,17 @@ HashMap *HashMap_Delete(HashMap *hm, const char *key) {
 /// @TODO: Implement this function. You will need to use valgrind to properly 
 ///        check the functionality.
 void HashMap_Free(HashMap *hm) {
+  BucketNode *p = NULL;
+  
+  for (int i = 0; i < hm->num_buckets; i++) {
+    p = hm->buckets[i];
+    while (p != NULL) {
+      hm->buckets[i] = p->next;
+      free(p);
+      p = hm->buckets[i];
+    }
+  }
+  free(hm->buckets);
+  free(hm);
   return;
 }
