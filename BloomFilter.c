@@ -18,7 +18,25 @@
 ///
 ///        (3) All the bits should be 0 at the start.
 BloomFilter *newBloomFilter(int num_bits, int num_hash, HashFunc *funcs) {
-  return NULL;
+  BloomFilter *new_filter = malloc(1 * sizeof(BloomFilter));
+  
+  if (new_filter == NULL) {
+    printf("Could not allocate memory for BloomFilter\n");
+  }
+  else
+  {
+    new_filter->num_bits = num_bits;
+    new_filter->num_hash = num_hash;
+    new_filter->data = malloc((num_bits / 8) * sizeof(unsigned char));  // make this ceiling(num_bits / 8)
+    new_filter->funcs = malloc(num_hash * sizeof(HashFunc *));
+
+    for (int i = 0; i < num_hash; i++) {
+      new_filter->funcs[i] = funcs[i];
+    }
+  }
+  
+
+  return new_filter;
 }
 
 /// @brief Add a string to the BloomFilter
