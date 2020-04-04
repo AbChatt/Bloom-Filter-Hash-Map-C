@@ -32,7 +32,7 @@ HashMap *newHashMap(int num_buckets, HashFunc func) {
   HashMap *new_map = malloc(1 * sizeof(HashMap));
 
   if (new_map == NULL) {
-    printf("Error: could not allocate memory for HashMap\n");
+    fprintf(stderr, "Error: could not allocate memory for HashMap\n");
   }
   else
   {
@@ -40,6 +40,10 @@ HashMap *newHashMap(int num_buckets, HashFunc func) {
     new_map->num_buckets = num_buckets;
     new_map->buckets = malloc(num_buckets * sizeof(BucketNode*));
     new_map->num_elems = 0;
+
+    for (int i = 0; i < num_buckets; i++) {
+      new_map->buckets[i] = NULL;
+    }
   }
 
   return new_map;
@@ -60,7 +64,37 @@ HashMap *newHashMap(int num_buckets, HashFunc func) {
 ///        each one insert the nodes in the linked list sequentially. See the
 ///        test casesfor example behaviour.
 HashMap *HashMap_Resize(HashMap *hm, int new_size) {
-  return hm;
+  HashMap *new_hash_map = malloc(1 * sizeof(HashMap));
+  int index = -1;
+
+  if (new_hash_map == NULL) {
+    fprintf(stderr, "Unable to allocate memory for new hash map\n");
+    return hm;
+  }
+  else
+  {
+    new_hash_map->func = hm->func;
+    new_hash_map->num_buckets = new_size;
+    new_hash_map->buckets = malloc(new_size * sizeof(BucketNode *));
+    new_hash_map->num_elems = hm->num_elems;
+
+    for (int i = 0; i < new_hash_map->num_buckets; i++) {
+      new_hash_map->buckets[i] = NULL;
+    }
+
+    for (int j = 0; j < hm->num_buckets; j++) {
+      index = hm->func((hm->buckets[j])->key) % new_hash_map->num_buckets;
+      BucketNode *new_bucket = malloc(1 * sizeof(BucketNode));
+      strcpy(new_bucket->key, (hm->buckets[j])->key);
+      strcpy(new_bucket->value, (hm->buckets[j])->value);
+      new_bucket->next = new_hash_map->buckets[index];
+      new_hash_map->buckets[index] = new_bucket;
+    }
+
+    HashMap_Free(hm);
+
+    return new_hash_map;    
+  }
 }
 
 /// @brief Add a key-value pair to the HashMap. Dynamically resize
@@ -87,7 +121,54 @@ HashMap *HashMap_Resize(HashMap *hm, int new_size) {
 ///            of elements in the HashMap is >= the number of buckets,
 ///            double the size of the HashMap and re-hash all the elements.
 HashMap *HashMap_Add(HashMap *hm, const char *key, const char *value) {
+  int index = -1;
+  int val_found = 0;
+  index = hm->func(key) % hm->num_buckets;
+
+  if (strcmp(hm->buckets[index]->key, key) == 0) {  // case 1
+    strcpy(hm->buckets[index]->value, value);
+  }
+  else if (hm->buckets[index] == NULL && hm->buckets[index]->next == NULL) {  // case 2
+    BucketNode *new_bucket = malloc(1 * sizeof(BucketNode));
+    strcpy(new_bucket->key, key);
+    strcpy(new_bucket->value, value);
+
+    hm->num_elems++;
+    new_bucket->next = NULL;
+    hm->buckets[index] = new_bucket;
+  }
+  else  // key value pair could be in linked list somewhere (case 1 extended)
+  {
+    BucketNode *p = NULL;
+    p = hm->buckets[index]->next;
+
+    while (p != NULL) {
+      if (strcmp(p->key, key) == 0) {
+        strcpy(p->value, value);
+        val_found = 1;
+        break;
+      }
+
+      p = p->next;
+    }
+
+    if (val_found == 0) { // case 2 if traversal finds nothing
+      BucketNode *new_bucket = malloc(1 * sizeof(BucketNode));
+      strcpy(new_bucket->key, key);
+      strcpy(new_bucket->value, value);
+
+      hm->num_elems++;
+      new_bucket->next = NULL;
+      hm->buckets[index] = new_bucket; 
+    }
+  }
+  
+  if (hm->num_elems >= hm->num_buckets) {
+    hm = HashMap_Resize(hm, hm->num_buckets * 2);
+  }
+
   return hm;
+  
 }
 
 /// @brief Find the value of the given key in the HashMap
@@ -100,6 +181,10 @@ HashMap *HashMap_Add(HashMap *hm, const char *key, const char *value) {
 ///
 /// @TODO: Implement this function
 char *HashMap_Find(HashMap *hm, const char *key) {
+  //int index = -1;
+  //index = hm->func(key) % hm->num_buckets;
+
+
   return NULL;
 }
 

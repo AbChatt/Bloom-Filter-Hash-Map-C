@@ -27,15 +27,18 @@ BloomFilter *newBloomFilter(int num_bits, int num_hash, HashFunc *funcs) {
   {
     new_filter->num_bits = num_bits;
     new_filter->num_hash = num_hash;
-    new_filter->data = malloc((num_bits / 8) * sizeof(unsigned char));  // make this ceiling(num_bits / 8)
+    new_filter->data = (unsigned char *)calloc(num_bits, sizeof(unsigned char));  // make this ceiling(num_bits / 8)
     new_filter->funcs = malloc(num_hash * sizeof(HashFunc *));
 
-    for (int i = 0; i < num_hash; i++) {
-      new_filter->funcs[i] = funcs[i];
+    for (int i = 0; i < num_bits; i++) {
+      UNSETBIT(new_filter->data, i);
+    }
+
+    for (int j = 0; j < num_hash; j++) {
+      new_filter->funcs[j] = funcs[j];
     }
   }
   
-
   return new_filter;
 }
 
@@ -51,6 +54,13 @@ BloomFilter *newBloomFilter(int num_bits, int num_hash, HashFunc *funcs) {
 ///        To get the index of the bitmap for a hash function, do:
 ///               index = hash(str) % num_bits
 void BloomFilter_Add(BloomFilter *bf, const char *str) {
+  int index = -1;
+
+  for (int i = 0; i < bf->num_hash; i++){
+    index = bf->funcs[i](str) % bf->num_bits;
+    SETBIT(bf->data, index);
+  }
+
   return;
 }
 
@@ -67,5 +77,15 @@ void BloomFilter_Add(BloomFilter *bf, const char *str) {
 ///        as above, using:
 ///               index = hash(str) % num_bits
 int BloomFilter_Check(BloomFilter *bf, const char *str) {
-  return 0;
+  int index = -1;
+
+  for (int i = 0; i < bf->num_hash; i++) {
+    index = bf->funcs[i](str) % bf->num_bits;
+
+    if (GETBIT(bf->data, index) == 0) {
+      return 0; // definitely not in BloomFilter
+    }
+  }
+  
+  return 1; // possibly in BloomFilter
 }
