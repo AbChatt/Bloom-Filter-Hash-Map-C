@@ -75,20 +75,34 @@ HashMap *HashMap_Resize(HashMap *hm, int new_size) {
   {
     new_hash_map->func = hm->func;
     new_hash_map->num_buckets = new_size;
-    new_hash_map->buckets = malloc(new_size * sizeof(BucketNode *));
+    new_hash_map->buckets = malloc(new_size * sizeof(BucketNode*));
     new_hash_map->num_elems = hm->num_elems;
 
     for (int i = 0; i < new_hash_map->num_buckets; i++) {
       new_hash_map->buckets[i] = NULL;
     }
 
-    for (int j = 0; j < hm->num_buckets; j++) {
-      index = hm->func((hm->buckets[j])->key) % new_hash_map->num_buckets;
-      BucketNode *new_bucket = malloc(1 * sizeof(BucketNode));
-      strcpy(new_bucket->key, (hm->buckets[j])->key);
-      strcpy(new_bucket->value, (hm->buckets[j])->value);
-      new_bucket->next = new_hash_map->buckets[index];
-      new_hash_map->buckets[index] = new_bucket;
+    for (int j = 0; j < hm->num_elems; j++) {
+      BucketNode *p = malloc(1 * sizeof(BucketNode *));
+      BucketNode *q = malloc(1 * sizeof(BucketNode *));
+
+      p = hm->buckets[j];
+
+      while (p != NULL) {
+        index = hm->func(p->key) % new_hash_map->num_buckets;
+        q = new_hash_map->buckets[index];
+
+        BucketNode *new_bucket = malloc(1 * sizeof(BucketNode));
+        strcpy(new_bucket->key, p->key);
+        strcpy(new_bucket->value, p->value);
+
+        while (q->next != NULL) {
+          q = q->next;
+        }
+
+        new_bucket->next = NULL;
+        q->next = new_bucket;
+      }
     }
 
     HashMap_Free(hm);
@@ -125,10 +139,7 @@ HashMap *HashMap_Add(HashMap *hm, const char *key, const char *value) {
   int val_found = 0;
   index = hm->func(key) % hm->num_buckets;
 
-  if (strcmp(hm->buckets[index]->key, key) == 0) {  // case 1
-    strcpy(hm->buckets[index]->value, value);
-  }
-  else if (hm->buckets[index] == NULL && hm->buckets[index]->next == NULL) {  // case 2
+  if (hm->buckets[index] == NULL) {  // case 2
     BucketNode *new_bucket = malloc(1 * sizeof(BucketNode));
     strcpy(new_bucket->key, key);
     strcpy(new_bucket->value, value);
@@ -137,10 +148,13 @@ HashMap *HashMap_Add(HashMap *hm, const char *key, const char *value) {
     new_bucket->next = NULL;
     hm->buckets[index] = new_bucket;
   }
+  else if (strcmp(hm->buckets[index]->key, key) == 0) {  // case 1
+    strcpy(hm->buckets[index]->value, value);
+  }
   else  // key value pair could be in linked list somewhere (case 1 extended)
   {
-    BucketNode *p = NULL;
-    p = hm->buckets[index]->next;
+    BucketNode *p = malloc(1 * sizeof(BucketNode *));
+    p = hm->buckets[index]->next;   // already checked hm->buckets[index] in if block
 
     while (p != NULL) {
       if (strcmp(p->key, key) == 0) {
@@ -152,13 +166,16 @@ HashMap *HashMap_Add(HashMap *hm, const char *key, const char *value) {
       p = p->next;
     }
 
+    p = NULL;
+    free(p);
+
     if (val_found == 0) { // case 2 if traversal finds nothing
       BucketNode *new_bucket = malloc(1 * sizeof(BucketNode));
       strcpy(new_bucket->key, key);
       strcpy(new_bucket->value, value);
 
       hm->num_elems++;
-      new_bucket->next = NULL;
+      new_bucket->next = hm->buckets[index];
       hm->buckets[index] = new_bucket; 
     }
   }
@@ -181,11 +198,28 @@ HashMap *HashMap_Add(HashMap *hm, const char *key, const char *value) {
 ///
 /// @TODO: Implement this function
 char *HashMap_Find(HashMap *hm, const char *key) {
-  //int index = -1;
-  //index = hm->func(key) % hm->num_buckets;
+  int index = -1;
+  index = hm->func(key) % hm->num_buckets;
 
+  if (strcmp(hm->buckets[index]->key, key) == 0) {
+    return hm->buckets[index]->value;
+  }
+  else if (hm->buckets[index] == NULL) {
+    return NULL;
+  }
+  else
+  {
+    BucketNode *p = NULL;
+    p = hm->buckets[index]->next;
 
-  return NULL;
+    while (p != NULL) {
+      if (strcmp(p->key, key) == 0) {
+        return p->value;
+      }
+    }
+
+    return NULL;
+  }
 }
 
 /// @brief Delete a key-value pair from the HashMap. Dynamically resize
@@ -205,6 +239,26 @@ char *HashMap_Find(HashMap *hm, const char *key) {
 ///             shrink the HashMap by half. (Similar to Dynamic Arrays). You'll
 ///             need to re-hash all the elements.
 HashMap *HashMap_Delete(HashMap *hm, const char *key) {
+  
+  if (HashMap_Find(hm, key) != NULL) {
+    int index = -1;
+    index = hm->func(key) % hm->num_buckets;
+
+    if (strcmp(hm->buckets[index]->key, key) == 0) {
+      BucketNode *p = NULL;
+      p = hm->buckets[index];
+      hm->buckets[index] = p->next;
+      free(p);
+    }
+    else
+    {
+      BucketNode *p = malloc(1 * sizeof(BucketNode *));
+      BucketNode *q = malloc(1 * sizeof(BucketNode *));
+    }
+    
+  }
+  
+  
   return hm;
 }
 
